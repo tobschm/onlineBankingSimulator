@@ -74,7 +74,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const deIbanRegex = /^DE\d{20}$/;
 
         if (!deIbanRegex.test(iban)) {
-            setError('error-iban', 'Bitte geben Sie eine gültige deutsche IBAN ein (z.B. DE12 3456...).');
+            setError('error-iban', 'Bitte geben Sie eine gültige IBAN ein (z.B. DE00 1111 2222 3333 4444 55).');
             return false;
         }
         setError('error-iban', '');
@@ -184,13 +184,21 @@ document.addEventListener('DOMContentLoaded', () => {
     dateInput.addEventListener('input', validateDate);
 
     // Input Restrictions
-    // IBAN: Only letters and numbers, auto uppercase
+    // IBAN: Only letters and numbers, auto uppercase, and format with spaces
     ibanInput.addEventListener('input', (e) => {
         let value = e.target.value;
         // Remove strictly anything that is NOT a letter or number
         value = value.replace(/[^a-zA-Z0-9]/g, '');
         // Convert to uppercase
-        e.target.value = value.toUpperCase();
+        value = value.toUpperCase();
+
+        // Add space every 4 characters
+        const formattedValue = value.match(/.{1,4}/g)?.join(' ') || value;
+
+        // Only update if different to avoid cursor/state issues if possible (though simple replace is fine here)
+        if (e.target.value !== formattedValue) {
+            e.target.value = formattedValue;
+        }
     });
 
     // Amount: strict numbers only (block e, +, -) for type="number"
