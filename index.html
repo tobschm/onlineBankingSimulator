@@ -1,11 +1,13 @@
 <!DOCTYPE html>
 <html lang="de">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Lorch-Bank Online Banking</title>
     <link rel="stylesheet" href="style.css">
 </head>
+
 <body>
     <div class="app-container">
         <header class="main-header">
@@ -24,7 +26,8 @@
                 </div>
                 <div class="card-row balance-row">
                     <label>Kontostand</label>
-                    <p class="balance">12.300,00 €</p>
+                    <p class="balance" id="balance-display">12.300,00 €</p>
+                    <p class="available-balance">Verfügbar: 1.000,00 €</p>
                 </div>
             </div>
         </section>
@@ -34,11 +37,13 @@
                 <div class="form-group">
                     <label for="recipient">Empfänger</label>
                     <input type="text" id="recipient" name="recipient" placeholder="Name des Empfängers" required>
+                    <div class="error-message" id="error-recipient"></div>
                 </div>
 
                 <div class="form-group">
                     <label for="iban">IBAN</label>
-                    <input type="text" id="iban" name="iban" placeholder="DE89 3704 0044 ..." required>
+                    <input type="text" id="iban" name="iban" placeholder="DE12 3456 7890 ..." required>
+                    <div class="error-message" id="error-iban"></div>
                 </div>
 
                 <div class="form-group">
@@ -47,6 +52,7 @@
                         <input type="number" id="amount" name="amount" placeholder="0,00" step="0.01" required>
                         <span class="currency-symbol">€</span>
                     </div>
+                    <div class="error-message" id="error-amount"></div>
                 </div>
 
                 <div class="form-group">
@@ -57,11 +63,25 @@
                 <div class="form-group">
                     <label for="date">Ausführung am</label>
                     <input type="date" id="date" name="date" required>
+                    <div class="checkbox-group">
+                        <input type="checkbox" id="realtime" name="realtime">
+                        <label for="realtime">Als Echtzeitüberweisung ausführen</label>
+                    </div>
+                    <div class="error-message" id="error-date"></div>
                 </div>
 
                 <button type="submit" class="btn-execute">Ausführen</button>
             </form>
         </main>
     </div>
+
+    <div id="success-overlay" class="overlay hidden">
+        <div class="success-checkmark">
+            <div class="check-icon"></div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
 </body>
+
 </html>
