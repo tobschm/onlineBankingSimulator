@@ -1,0 +1,241 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+:root {
+    --primary-color: #0f172a; /* deeply dark navy */
+    --primary-light: #1e293b;
+    --accent-color: #3b82f6; /* bright blue */
+    --accent-hover: #2563eb;
+    --bg-color: #f1f5f9; /* slate 100 */
+    --card-bg: #ffffff;
+    --text-main: #0f172a;
+    --text-muted: #64748b;
+    --border-color: #e2e8f0;
+    --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+    --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+    --radius-lg: 16px;
+    --radius-md: 10px;
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: 'Inter', sans-serif;
+    background-color: var(--bg-color);
+    color: var(--text-main);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    padding: 20px;
+}
+
+.app-container {
+    width: 100%;
+    max-width: 440px;
+    background-color: var(--card-bg);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-lg);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Header */
+.main-header {
+    background-color: var(--card-bg);
+    padding: 24px;
+    text-align: center;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.bank-name {
+    color: var(--primary-color);
+    font-size: 1.5rem;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+    text-transform: uppercase;
+}
+
+/* Account Info Card */
+.account-info {
+    padding: 24px 24px 10px;
+}
+
+.card-details {
+    background: linear-gradient(145deg, var(--primary-color), #334155);
+    color: white;
+    padding: 24px;
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-md);
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    position: relative;
+    overflow: hidden;
+}
+
+/* Subtle decorative circle on the card */
+.card-details::after {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -20%;
+    width: 200px;
+    height: 200px;
+    background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 70%);
+    border-radius: 50%;
+    pointer-events: none;
+}
+
+.card-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.user-name {
+    font-size: 1.25rem;
+    font-weight: 600;
+    letter-spacing: -0.025em;
+}
+
+.bank-logo-placeholder {
+    font-weight: 700;
+    font-size: 0.9rem;
+    background: rgba(255,255,255,0.2);
+    padding: 4px 8px;
+    border-radius: 6px;
+}
+
+.iban-row, .balance-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+}
+
+.card-details label {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    opacity: 0.7;
+    margin-bottom: 0px;
+    color: white; /* Override default label color */
+}
+
+.iban {
+    font-family: 'Inter', monospace; /* Use monospaced numbers if possible, or just standard */
+    font-size: 0.95rem;
+    opacity: 0.95;
+    letter-spacing: 0.5px;
+}
+
+.balance {
+    font-size: 1.75rem;
+    font-weight: 700;
+}
+
+/* Form */
+.transfer-section {
+    padding: 24px;
+}
+
+.form-group {
+    margin-bottom: 20px;
+    position: relative;
+}
+
+.form-group label {
+    display: block;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    margin-bottom: 8px;
+}
+
+.form-group input {
+    width: 100%;
+    padding: 12px 16px;
+    font-size: 1rem;
+    color: var(--text-main);
+    background-color: #f8fafc;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    transition: all 0.2s ease;
+    outline: none;
+}
+
+.form-group input:focus {
+    background-color: #fff;
+    border-color: var(--accent-color);
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+}
+
+.form-group input::placeholder {
+    color: #cbd5e1;
+}
+
+.input-wrapper {
+    position: relative;
+}
+
+.input-wrapper input {
+    padding-right: 40px;
+}
+
+.currency-symbol {
+    position: absolute;
+    right: 16px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--text-muted);
+    font-weight: 500;
+}
+
+/* Button */
+.btn-execute {
+    margin-top: 10px;
+    width: 100%;
+    padding: 16px;
+    background-color: var(--accent-color);
+    color: white;
+    border: none;
+    border-radius: var(--radius-md);
+    font-size: 1rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background-color 0.2s, transform 0.1s;
+    box-shadow: 0 2px 4px rgba(59, 130, 246, 0.3);
+}
+
+.btn-execute:hover {
+    background-color: var(--accent-hover);
+    box-shadow: 0 4px 6px rgba(59, 130, 246, 0.4);
+}
+
+.btn-execute:active {
+    transform: scale(0.98);
+    box-shadow: none;
+}
+
+/* Responsive adjustments */
+@media (max-width: 480px) {
+    body {
+        padding: 0;
+        background-color: white;
+    }
+    
+    .app-container {
+        box-shadow: none;
+        border-radius: 0;
+        max-width: 100%;
+        min-height: 100vh;
+    }
+
+    .main-header {
+        border-bottom: 1px solid var(--border-color);
+    }
+}
