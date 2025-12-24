@@ -49,14 +49,14 @@ body {
 
 /* Header */
 .main-header {
-    background-color: var(--card-bg);
+    background-color: #334155;
     padding: 24px;
     text-align: center;
     border-bottom: 1px solid var(--border-color);
 }
 
 .bank-name {
-    color: var(--primary-color);
+    color: white;
     font-size: 1.5rem;
     font-weight: 800;
     letter-spacing: -0.5px;

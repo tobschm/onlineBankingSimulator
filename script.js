@@ -81,7 +81,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const validateAmount = () => {
         const amount = parseFloat(amountInput.value);
-        if (isNaN(amount) || amount <= 0) {
+        if (isNaN(amount)) {
+            setError('error-amount', 'Geben Sie einen Betrag ein.');
+            return false;
+        }
+        if (amount <= 0) {
             setError('error-amount', 'Der Betrag muss positiv sein.');
             return false;
         }
