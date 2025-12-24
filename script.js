@@ -64,6 +64,7 @@ document.addEventListener('DOMContentLoaded', () => {
             setError('error-recipient', 'Empfänger darf nicht leer sein.');
             return false;
         }
+        setError('error-recipient', '');
         return true;
     };
 
@@ -76,6 +77,7 @@ document.addEventListener('DOMContentLoaded', () => {
             setError('error-iban', 'Bitte geben Sie eine gültige deutsche IBAN ein (z.B. DE12 3456...).');
             return false;
         }
+        setError('error-iban', '');
         return true;
     };
 
@@ -99,11 +101,15 @@ document.addEventListener('DOMContentLoaded', () => {
             setError('error-amount', 'Nicht genügend Guthaben auf dem Konto.');
             return false;
         }
+        setError('error-amount', '');
         return true;
     };
 
     const validateDate = () => {
-        if (realtimeCheckbox.checked) return true; // Date ignored if realtime
+        if (realtimeCheckbox.checked) {
+            setError('error-date', '');
+            return true;
+        }
 
         if (!dateInput.value) {
             setError('error-date', 'Bitte wählen Sie ein Ausführungsdatum.');
@@ -119,6 +125,7 @@ document.addEventListener('DOMContentLoaded', () => {
             setError('error-date', 'Das Datum muss in der Zukunft oder heute liegen.');
             return false;
         }
+        setError('error-date', '');
         return true;
     };
 
@@ -153,10 +160,28 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // Optional: Real-time validation on blur
-    recipientInput.addEventListener('blur', () => { if (recipientInput.value) validateRecipient(); });
-    ibanInput.addEventListener('blur', () => { if (ibanInput.value) validateIBAN(); });
-    amountInput.addEventListener('blur', () => { if (amountInput.value) validateAmount(); });
+    // Real-time validation
+    const addValidationListeners = (element, validateFn) => {
+        ['input', 'blur'].forEach(event => {
+            element.addEventListener(event, () => {
+                // If the field is empty on input, maybe don't show error immediately unless it was already touched?
+                // But for "clearing" error, we need to run validation.
+                // The validate functions we modified set the error message if invalid.
+                // To avoid showing "Required" errors while the user is still typing the first character,
+                // we could check if it's 'input' and value is empty.
+                // However, the user request specifically asked for the error to go away when they enter something.
+                // So running validation on input is correct for that.
+                if (element.value || event === 'blur') validateFn();
+            });
+        });
+    };
+
+    addValidationListeners(recipientInput, validateRecipient);
+    addValidationListeners(ibanInput, validateIBAN);
+    addValidationListeners(amountInput, validateAmount);
+    // Date input is a bit special, usually change event or input
+    dateInput.addEventListener('change', validateDate);
+    dateInput.addEventListener('input', validateDate);
 
     // Input Restrictions
     // IBAN: Only letters and numbers, auto uppercase
