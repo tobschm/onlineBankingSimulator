@@ -22,57 +22,126 @@
                 </div>
                 <div class="card-row iban-row">
                     <label>IBAN</label>
-                    <p class="iban">DE89 3704 0044 0532 0130 00</p>
+                    <p class="iban">DE29 3700 0044 0532 0130 00</p>
                 </div>
                 <div class="card-row balance-row">
                     <label>Kontostand</label>
                     <p class="balance" id="balance-display">12.300,00 €</p>
-                    <p class="available-balance">Verfügbar: 1.000,00 €</p>
+                    <p class="available-balance">Verfügbar: 5.000,00 €</p>
                 </div>
             </div>
         </section>
 
+        <div class="tabs-container">
+            <div class="tabs">
+                <button class="tab-btn active" data-tab="transfer">Überweisung</button>
+                <button class="tab-btn" data-tab="standing-order">Dauerauftrag</button>
+            </div>
+        </div>
+
         <main class="transfer-section">
-            <form class="transfer-form" onsubmit="event.preventDefault();">
-                <div class="form-group">
-                    <label for="recipient">Empfänger</label>
-                    <input type="text" id="recipient" name="recipient" placeholder="Name des Empfängers">
-                    <div class="error-message" id="error-recipient"></div>
-                </div>
-
-                <div class="form-group">
-                    <label for="iban">IBAN</label>
-                    <input type="text" id="iban" name="iban" placeholder="DE00 1111 2222 3333 4444 55">
-                    <div class="error-message" id="error-iban"></div>
-                </div>
-
-                <div class="form-group">
-                    <label for="amount">Betrag</label>
-                    <div class="input-wrapper">
-                        <input type="number" id="amount" name="amount" placeholder="0,00" step="0.01">
-                        <span class="currency-symbol">€</span>
-                    </div>
-                    <div class="error-message" id="error-amount"></div>
-                </div>
-
-                <div class="form-group">
-                    <label for="reference">Verwendungszweck</label>
-                    <input type="text" id="reference" name="reference" placeholder="Miete, Rechnung 123...">
-                </div>
-
-                <div class="form-group">
-                    <label for="date">Ausführung am</label>
-                    <input type="date" id="date" name="date">
-                    <div class="error-message" id="error-date"></div>
-                    <div class="checkbox-group">
-                        <input type="checkbox" id="realtime" name="realtime">
-                        <label for="realtime">Als Echtzeitüberweisung ausführen</label>
+            <div id="transfer" class="tab-content active">
+                <form class="transfer-form" id="form-transfer" onsubmit="event.preventDefault();">
+                    <div class="form-group">
+                        <label for="recipient">Empfänger</label>
+                        <input type="text" id="recipient" name="recipient" placeholder="Name des Empfängers">
+                        <div class="error-message" id="error-recipient"></div>
                     </div>
 
-                </div>
+                    <div class="form-group">
+                        <label for="iban">IBAN</label>
+                        <input type="text" id="iban" name="iban" placeholder="DE00 1111 2222 3333 4444 55">
+                        <div class="error-message" id="error-iban"></div>
+                    </div>
 
-                <button type="submit" class="btn-execute">Ausführen</button>
-            </form>
+                    <div class="form-group">
+                        <label for="amount">Betrag</label>
+                        <div class="input-wrapper">
+                            <input type="number" id="amount" name="amount" placeholder="0,00" step="0.01">
+                            <span class="currency-symbol">€</span>
+                        </div>
+                        <div class="error-message" id="error-amount"></div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="reference">Verwendungszweck</label>
+                        <input type="text" id="reference" name="reference" placeholder="Miete, Rechnung 123...">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="date">Ausführung am</label>
+                        <input type="date" id="date" name="date">
+                        <div class="error-message" id="error-date"></div>
+                        <div class="checkbox-group">
+                            <input type="checkbox" id="realtime" name="realtime">
+                            <label for="realtime">Als Echtzeitüberweisung ausführen</label>
+                        </div>
+
+                    </div>
+
+                    <button type="submit" class="btn-execute">Ausführen</button>
+                </form>
+            </div>
+
+            <div id="standing-order" class="tab-content">
+                <form class="transfer-form" id="form-standing-order" onsubmit="event.preventDefault();">
+                    <div class="form-group">
+                        <label for="so-recipient">Empfänger</label>
+                        <input type="text" id="so-recipient" name="recipient" placeholder="Name des Empfängers">
+                        <div class="error-message" id="error-so-recipient"></div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="so-iban">IBAN</label>
+                        <input type="text" id="so-iban" name="iban" placeholder="DE00 1111 2222 3333 4444 55">
+                        <div class="error-message" id="error-so-iban"></div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="so-amount">Betrag</label>
+                        <div class="input-wrapper">
+                            <input type="number" id="so-amount" name="amount" placeholder="0,00" step="0.01">
+                            <span class="currency-symbol">€</span>
+                        </div>
+                        <div class="error-message" id="error-so-amount"></div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="so-reference">Verwendungszweck</label>
+                        <input type="text" id="so-reference" name="reference" placeholder="Miete, Rechnung 123...">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="so-turnus">Turnus</label>
+                        <select id="so-turnus" name="turnus">
+                            <option value="monthly">Monatlich</option>
+                            <option value="bimonthly">Zweimonatlich</option>
+                            <option value="quarterly">Vierteljährlich</option>
+                            <option value="halfyearly">Halbjährlich</option>
+                            <option value="yearly">Jährlich</option>
+                            <option value="weekly">Wochentlich</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="so-date">Ausführung ab</label>
+                        <input type="date" id="so-date" name="date">
+                        <div class="error-message" id="error-so-date"></div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="so-end-date">Ausführung bis</label>
+                        <input type="date" id="so-end-date" name="end-date">
+                        <div class="error-message" id="error-so-end-date"></div>
+                        <div class="checkbox-group">
+                            <input type="checkbox" id="so-unlimited" name="unlimited">
+                            <label for="so-unlimited">Unbefristet</label>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn-execute">Dauerauftrag einrichten</button>
+                </form>
+            </div>
         </main>
     </div>
 

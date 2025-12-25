@@ -1,21 +1,58 @@
 
 document.addEventListener('DOMContentLoaded', () => {
     // Elements
-    const form = document.querySelector('.transfer-form');
-    const recipientInput = document.getElementById('recipient');
-    const ibanInput = document.getElementById('iban');
-    const amountInput = document.getElementById('amount');
-    const dateInput = document.getElementById('date');
-    const realtimeCheckbox = document.getElementById('realtime');
+    const tabs = document.querySelectorAll('.tab-btn');
+    const tabContents = document.querySelectorAll('.tab-content');
+
+    // Initial active form elements (default to transfer)
+    let currentFormId = 'form-transfer';
+
+    // Helper to get current form elements
+    const getFormElements = (formId) => {
+        const prefix = formId === 'form-standing-order' ? 'so-' : '';
+        return {
+            form: document.getElementById(formId),
+            recipientInput: document.getElementById(`${prefix}recipient`),
+            ibanInput: document.getElementById(`${prefix}iban`),
+            amountInput: document.getElementById(`${prefix}amount`),
+            dateInput: document.getElementById(`${prefix}date`),
+            // Optional specific fields
+            turnusInput: document.getElementById(`${prefix}turnus`),
+            endDateInput: document.getElementById(`${prefix}end-date`),
+            realtimeCheckbox: formId === 'form-transfer' ? document.getElementById('realtime') : null // Only on transfer
+        };
+    };
+
+    // Tab Logic
+    tabs.forEach(tab => {
+        tab.addEventListener('click', () => {
+            // Remove active class from all tabs
+            tabs.forEach(t => t.classList.remove('active'));
+            tabContents.forEach(c => c.classList.remove('active'));
+
+            // Add active class to clicked tab
+            tab.classList.add('active');
+
+            // Show content
+            const targetId = tab.dataset.tab;
+            const targetContent = document.getElementById(targetId);
+            targetContent.classList.add('active');
+
+            // Update current form ID references
+            currentFormId = targetId === 'standing-order' ? 'form-standing-order' : 'form-transfer';
+
+            // Clear errors when switching (optional but good UX)
+            clearErrors();
+        });
+    });
+
+    const successOverlay = document.getElementById('success-overlay');
     const balanceDisplay = document.getElementById('balance-display');
     const availableBalanceDisplay = document.querySelector('.available-balance');
-    const successOverlay = document.getElementById('success-overlay');
+
 
     // Initialize Variables
-    // Random balance between 5000 and 100000
     let currentBalance = Math.floor(Math.random() * (100000 - 5000 + 1)) + 5000;
-
-    // Available balance (Transaction limit) initialized to 5000
     let availableBalance = 5000.00;
 
     // Helper functions
@@ -23,7 +60,6 @@ document.addEventListener('DOMContentLoaded', () => {
         return amount.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' €';
     };
 
-    // Initialize UI
     const updateUI = () => {
         balanceDisplay.textContent = formatCurrency(currentBalance);
         if (availableBalanceDisplay) {
@@ -44,168 +80,261 @@ document.addEventListener('DOMContentLoaded', () => {
         errorElements.forEach(el => el.textContent = '');
     };
 
-    // Date Logic
-    const today = new Date().toISOString().split('T')[0];
-    dateInput.min = today; // HTML5 constraint
+    // Validation Logic Generators
+    const createValidators = (elements) => {
+        const { recipientInput, ibanInput, amountInput, dateInput, realtimeCheckbox, endDateInput, unlimitedCheckbox } = elements;
+        const prefix = elements.form.id === 'form-standing-order' ? 'error-so-' : 'error-';
+        const isStandingOrder = elements.form.id === 'form-standing-order';
 
-    realtimeCheckbox.addEventListener('change', (e) => {
-        if (e.target.checked) {
-            dateInput.disabled = true;
-            dateInput.value = ''; // Optional: clear date or set to today
-            setError('error-date', '');
-        } else {
-            dateInput.disabled = false;
-        }
-    });
+        return {
+            validateRecipient: () => {
+                if (!recipientInput.value.trim()) {
+                    setError(`${prefix}recipient`, 'Empfänger darf nicht leer sein.');
+                    return false;
+                }
+                setError(`${prefix}recipient`, '');
+                return true;
+            },
+            validateIBAN: () => {
+                const iban = ibanInput.value.replace(/\s/g, '');
+                const deIbanRegex = /^DE\d{20}$/;
+                if (!deIbanRegex.test(iban)) {
+                    setError(`${prefix}iban`, 'Bitte geben Sie eine gültige IBAN ein (z.B. DE00 1111 2222 3333 4444 55).');
+                    return false;
+                }
+                setError(`${prefix}iban`, '');
+                return true;
+            },
+            validateAmount: () => {
+                const amount = parseFloat(amountInput.value);
+                if (isNaN(amount)) {
+                    setError(`${prefix}amount`, 'Geben Sie einen Betrag ein.');
+                    return false;
+                }
+                if (amount <= 0) {
+                    setError(`${prefix}amount`, 'Der Betrag muss positiv sein.');
+                    return false;
+                }
 
-    // Validation Functions
-    const validateRecipient = () => {
-        if (!recipientInput.value.trim()) {
-            setError('error-recipient', 'Empfänger darf nicht leer sein.');
-            return false;
-        }
-        setError('error-recipient', '');
-        return true;
+                // Standing Order Logic: NO balance/limit check per request.
+                if (isStandingOrder) {
+                    setError(`${prefix}amount`, '');
+                    return true;
+                }
+
+                // Standard Transfer Logic: Check limits
+                if (amount > availableBalance) {
+                    setError(`${prefix}amount`, `Der Betrag darf maximal ${formatCurrency(availableBalance)} betragen.`);
+                    return false;
+                }
+
+                if (amount > currentBalance) {
+                    setError(`${prefix}amount`, 'Nicht genügend Guthaben auf dem Konto.');
+                    return false;
+                }
+                setError(`${prefix}amount`, '');
+                return true;
+            },
+            validateDate: () => {
+                // If realtime checkbox exists and is checked, date is optional/ignored
+                if (realtimeCheckbox && realtimeCheckbox.checked) {
+                    setError(`${prefix}date`, '');
+                    return true;
+                }
+
+                if (!dateInput.value) {
+                    setError(`${prefix}date`, 'Bitte wählen Sie ein Ausführungsdatum.');
+                    return false;
+                }
+
+                const selectedDate = new Date(dateInput.value);
+                const now = new Date();
+                now.setHours(0, 0, 0, 0);
+                selectedDate.setHours(0, 0, 0, 0);
+
+                if (selectedDate < now) {
+                    setError(`${prefix}date`, 'Das Datum muss in der Zukunft oder heute liegen.');
+                    return false;
+                }
+                setError(`${prefix}date`, '');
+                return true;
+            },
+            validateEndDate: () => {
+                // Only for Standing Order
+                if (!endDateInput) return true; // Not applicable
+
+                // If "Unbefristet" is checked, validation is always true (input should be disabled anyway)
+                if (unlimitedCheckbox && unlimitedCheckbox.checked) {
+                    setError(`${prefix}end-date`, '');
+                    return true;
+                }
+
+                if (!endDateInput.value) {
+                    // If not unlimited, and empty, we assume valid (optional end date logic) 
+                    // or valid because user said checkbox makes it unlimited.
+                    setError(`${prefix}end-date`, '');
+                    return true;
+                }
+
+                const startDate = new Date(dateInput.value);
+                const endDate = new Date(endDateInput.value);
+
+                // reset times
+                startDate.setHours(0, 0, 0, 0);
+                endDate.setHours(0, 0, 0, 0);
+
+                if (endDate <= startDate) {
+                    setError(`${prefix}end-date`, 'Das Enddatum muss nach dem Ausführungsdatum liegen.');
+                    return false;
+                }
+                setError(`${prefix}end-date`, '');
+                return true;
+            }
+        };
     };
 
-    const validateIBAN = () => {
-        // Simple regex structure Check (Not full checksum validation for this scope, but structure)
-        const iban = ibanInput.value.replace(/\s/g, ''); // remove spaces
-        const deIbanRegex = /^DE\d{20}$/;
+    // Setup Form Listeners
+    const setupForm = (formId) => {
+        const elements = getFormElements(formId);
+        if (!elements.form) return;
 
-        if (!deIbanRegex.test(iban)) {
-            setError('error-iban', 'Bitte geben Sie eine gültige IBAN ein (z.B. DE00 1111 2222 3333 4444 55).');
-            return false;
-        }
-        setError('error-iban', '');
-        return true;
-    };
+        // Add specific element for standing order
+        elements.unlimitedCheckbox = document.getElementById('so-unlimited');
 
-    const validateAmount = () => {
-        const amount = parseFloat(amountInput.value);
-        if (isNaN(amount)) {
-            setError('error-amount', 'Geben Sie einen Betrag ein.');
-            return false;
-        }
-        if (amount <= 0) {
-            setError('error-amount', 'Der Betrag muss positiv sein.');
-            return false;
-        }
-        // Check against availableBalance (Limit) instead of hardcoded 1000
-        if (amount > availableBalance) {
-            setError('error-amount', `Der Betrag darf maximal ${formatCurrency(availableBalance)} betragen.`);
-            return false;
-        }
-        // Check against total balance (Liquidity)
-        if (amount > currentBalance) {
-            setError('error-amount', 'Nicht genügend Guthaben auf dem Konto.');
-            return false;
-        }
-        setError('error-amount', '');
-        return true;
-    };
+        const validators = createValidators(elements);
 
-    const validateDate = () => {
-        if (realtimeCheckbox.checked) {
-            setError('error-date', '');
-            return true;
-        }
+        // Date Constraints
+        const today = new Date().toISOString().split('T')[0];
+        elements.dateInput.min = today;
+        if (elements.endDateInput) elements.endDateInput.min = today;
 
-        if (!dateInput.value) {
-            setError('error-date', 'Bitte wählen Sie ein Ausführungsdatum.');
-            return false;
-        }
-
-        const selectedDate = new Date(dateInput.value);
-        const now = new Date();
-        now.setHours(0, 0, 0, 0); // Normalize today
-        selectedDate.setHours(0, 0, 0, 0);
-
-        if (selectedDate < now) {
-            setError('error-date', 'Das Datum muss in der Zukunft oder heute liegen.');
-            return false;
-        }
-        setError('error-date', '');
-        return true;
-    };
-
-    // Form Submission
-    form.addEventListener('submit', (e) => {
-        e.preventDefault();
-        clearErrors();
-
-        const isRecipientValid = validateRecipient();
-        const isIbanValid = validateIBAN();
-        const isAmountValid = validateAmount();
-        const isDateValid = validateDate();
-
-        if (isRecipientValid && isIbanValid && isAmountValid && isDateValid) {
-            // Success
-            const amount = parseFloat(amountInput.value);
-            currentBalance -= amount;
-            availableBalance -= amount;
-            updateUI();
-
-            // Show Overlay
-            successOverlay.classList.remove('hidden');
-            successOverlay.classList.add('active');
-
-            // Optional: Hide overlay after a few seconds
-            setTimeout(() => {
-                successOverlay.classList.remove('active');
-                successOverlay.classList.add('hidden');
-                form.reset();
-                updateUI();
-            }, 3000);
-        }
-    });
-
-    // Real-time validation
-    const addValidationListeners = (element, validateFn) => {
-        ['input', 'blur'].forEach(event => {
-            element.addEventListener(event, () => {
-                // If the field is empty on input, maybe don't show error immediately unless it was already touched?
-                // But for "clearing" error, we need to run validation.
-                // The validate functions we modified set the error message if invalid.
-                // To avoid showing "Required" errors while the user is still typing the first character,
-                // we could check if it's 'input' and value is empty.
-                // However, the user request specifically asked for the error to go away when they enter something.
-                // So running validation on input is correct for that.
-                if (element.value || event === 'blur') validateFn();
+        // Realtime Checkbox Logic (Transfer only)
+        if (elements.realtimeCheckbox) {
+            elements.realtimeCheckbox.addEventListener('change', (e) => {
+                if (e.target.checked) {
+                    elements.dateInput.disabled = true;
+                    elements.dateInput.value = '';
+                    setError('error-date', '');
+                } else {
+                    elements.dateInput.disabled = false;
+                }
             });
+        }
+
+        // Unlimited Checkbox Logic (Standing Order only)
+        if (elements.unlimitedCheckbox && elements.endDateInput) {
+            elements.unlimitedCheckbox.addEventListener('change', (e) => {
+                if (e.target.checked) {
+                    elements.endDateInput.disabled = true;
+                    elements.endDateInput.value = ''; // Clear value
+                    // Clear any errors
+                    setError('error-so-end-date', '');
+                    elements.endDateInput.classList.add('disabled-input'); // Optional styling hook
+                } else {
+                    elements.endDateInput.disabled = false;
+                    elements.endDateInput.classList.remove('disabled-input');
+                    // Re-validate immediately to show error if dates are invalid
+                    validators.validateEndDate();
+                }
+            });
+        }
+
+        // Validation Listeners
+        const addListener = (el, fn) => {
+            if (!el) return;
+            ['input', 'blur'].forEach(ev => {
+                el.addEventListener(ev, () => {
+                    if (el.value || ev === 'blur') fn();
+                });
+            });
+        };
+
+        addListener(elements.recipientInput, validators.validateRecipient);
+        addListener(elements.ibanInput, validators.validateIBAN);
+        addListener(elements.amountInput, validators.validateAmount);
+
+        if (elements.dateInput) {
+            elements.dateInput.addEventListener('change', validators.validateDate);
+            elements.dateInput.addEventListener('input', validators.validateDate);
+            // Re-validate end date if start date changes
+            if (elements.endDateInput) {
+                elements.dateInput.addEventListener('change', validators.validateEndDate);
+            }
+        }
+
+        if (elements.endDateInput) {
+            // Validate end date on change
+            elements.endDateInput.addEventListener('change', validators.validateEndDate);
+            elements.endDateInput.addEventListener('input', validators.validateEndDate);
+        }
+
+        // Input Formatting (IBAN, Amount)
+        if (elements.ibanInput) {
+            elements.ibanInput.addEventListener('input', (e) => {
+                let value = e.target.value.replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
+                const formattedValue = value.match(/.{1,4}/g)?.join(' ') || value;
+                if (e.target.value !== formattedValue) {
+                    e.target.value = formattedValue;
+                }
+            });
+        }
+
+        if (elements.amountInput) {
+            elements.amountInput.addEventListener('keydown', (e) => {
+                if (['e', 'E', '+', '-'].includes(e.key)) {
+                    e.preventDefault();
+                }
+            });
+        }
+
+        // Submission
+        elements.form.addEventListener('submit', (e) => {
+            e.preventDefault();
+            clearErrors();
+
+            const isRecipientValid = validators.validateRecipient();
+            const isIbanValid = validators.validateIBAN();
+            const isAmountValid = validators.validateAmount();
+            const isDateValid = validators.validateDate();
+            // End Date is only relevant if not unlimited (handled inside validator)
+            const isEndDateValid = validators.validateEndDate();
+
+            if (isRecipientValid && isIbanValid && isAmountValid && isDateValid && isEndDateValid) {
+                // Success action
+                const amount = parseFloat(elements.amountInput.value);
+
+                // Deduct only for normal transfer
+                if (formId === 'form-transfer') {
+                    currentBalance -= amount;
+                    availableBalance -= amount;
+                    updateUI();
+                } else {
+                    // Standing order: Do not affect balance (Per user request)
+                }
+
+                // Show Overlay
+                successOverlay.classList.remove('hidden');
+                successOverlay.classList.add('active');
+
+                setTimeout(() => {
+                    successOverlay.classList.remove('active');
+                    successOverlay.classList.add('hidden');
+                    elements.form.reset();
+
+                    // Fix Reset State: Re-enable fields that might have been disabled by checkboxes
+                    if (elements.dateInput) elements.dateInput.disabled = false;
+                    if (elements.endDateInput) {
+                        elements.endDateInput.disabled = false;
+                        elements.endDateInput.classList.remove('disabled-input');
+                    }
+
+                    if (formId === 'form-transfer') updateUI();
+                }, 3000);
+            }
         });
     };
 
-    addValidationListeners(recipientInput, validateRecipient);
-    addValidationListeners(ibanInput, validateIBAN);
-    addValidationListeners(amountInput, validateAmount);
-    // Date input is a bit special, usually change event or input
-    dateInput.addEventListener('change', validateDate);
-    dateInput.addEventListener('input', validateDate);
-
-    // Input Restrictions
-    // IBAN: Only letters and numbers, auto uppercase, and format with spaces
-    ibanInput.addEventListener('input', (e) => {
-        let value = e.target.value;
-        // Remove strictly anything that is NOT a letter or number
-        value = value.replace(/[^a-zA-Z0-9]/g, '');
-        // Convert to uppercase
-        value = value.toUpperCase();
-
-        // Add space every 4 characters
-        const formattedValue = value.match(/.{1,4}/g)?.join(' ') || value;
-
-        // Only update if different to avoid cursor/state issues if possible (though simple replace is fine here)
-        if (e.target.value !== formattedValue) {
-            e.target.value = formattedValue;
-        }
-    });
-
-    // Amount: strict numbers only (block e, +, -) for type="number"
-    amountInput.addEventListener('keydown', (e) => {
-        // Block 'e', 'E', '+', '-' provided by browser for number inputs
-        if (['e', 'E', '+', '-'].includes(e.key)) {
-            e.preventDefault();
-        }
-    });
+    // Setup both forms
+    setupForm('form-transfer');
+    setupForm('form-standing-order');
 });
