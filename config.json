@@ -1,0 +1,17 @@
+[
+    {
+        "name": "Sabine Schubert",
+        "IBAN": "DE77 3700 0011 0760 0130 00",
+        "amount": "1200"
+    },
+    {
+        "name": "Max Müller",
+        "IBAN": "DE73 9900 0045 0533 0100 00",
+        "amount": "599,99"
+    },
+    {
+        "name": "Florian Fischer",
+        "IBAN": "DE44 5600 0034 0772 0111 00",
+        "amount": "1499,95"
+    }
+]

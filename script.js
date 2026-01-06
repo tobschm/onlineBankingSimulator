@@ -4,6 +4,16 @@ document.addEventListener('DOMContentLoaded', () => {
     const tabs = document.querySelectorAll('.tab-btn');
     const tabContents = document.querySelectorAll('.tab-content');
 
+    // Load Config
+    window.transferConfig = null;
+    fetch('config.json')
+        .then(response => response.json())
+        .then(data => {
+            window.transferConfig = data;
+            console.log('Config loaded:', data);
+        })
+        .catch(error => console.warn('Could not load config.json:', error));
+
     // Initial active form elements (default to transfer)
     let currentFormId = 'form-transfer';
 
@@ -303,6 +313,55 @@ document.addEventListener('DOMContentLoaded', () => {
                 // Success action
                 const amount = parseFloat(elements.amountInput.value);
 
+                // Config Validation Logic (Transfer Only)
+                if (formId === 'form-transfer' && window.transferConfig) {
+                    const inputName = elements.recipientInput.value.trim();
+                    const inputIban = elements.ibanInput.value.replace(/\s/g, '');
+                    const inputAmount = amount;
+
+                    // Check if either Name or IBAN exists in config
+                    const configEntry = window.transferConfig.find(entry =>
+                        entry.name === inputName || entry.IBAN.replace(/\s/g, '') === inputIban
+                    );
+
+                    if (configEntry) {
+                        // If found, ALL metrics must match
+                        const configIban = configEntry.IBAN.replace(/\s/g, '');
+                        // Parse config amount (handle string check and comma replacement if needed, though JSON has "1200" or "599,99")
+                        let configAmountStr = String(configEntry.amount).replace(',', '.');
+                        let configAmount = parseFloat(configAmountStr);
+
+                        const isNameMatch = configEntry.name === inputName;
+                        const isIbanMatch = configIban === inputIban;
+                        // Floating point comparison with small epsilon or direct if user input is precise
+                        const isAmountMatch = Math.abs(configAmount - inputAmount) < 0.01;
+
+                        if (!isNameMatch || !isIbanMatch || !isAmountMatch) {
+                            // Show Error in Overlay
+                            const checkmark = document.getElementById('success-checkmark');
+                            const errorMessage = document.getElementById('overlay-error-message');
+
+                            checkmark.classList.add('hidden');
+                            errorMessage.classList.remove('hidden');
+
+                            successOverlay.classList.remove('hidden');
+                            successOverlay.classList.add('active');
+
+                            setTimeout(() => {
+                                successOverlay.classList.remove('active');
+                                successOverlay.classList.add('hidden');
+                                // Reset overlay state after hiding
+                                setTimeout(() => {
+                                    checkmark.classList.remove('hidden');
+                                    errorMessage.classList.add('hidden');
+                                }, 300);
+                            }, 3000);
+                            return; // Stop execution
+                        }
+                    }
+                }
+
+                // Normal Success Flow (or Validated Config Flow)
                 // Deduct only for normal transfer
                 if (formId === 'form-transfer') {
                     currentBalance -= amount;
@@ -312,7 +371,12 @@ document.addEventListener('DOMContentLoaded', () => {
                     // Standing order: Do not affect balance (Per user request)
                 }
 
-                // Show Overlay
+                // Show Success Overlay
+                const checkmark = document.getElementById('success-checkmark');
+                const errorMessage = document.getElementById('overlay-error-message');
+                checkmark.classList.remove('hidden');
+                errorMessage.classList.add('hidden');
+
                 successOverlay.classList.remove('hidden');
                 successOverlay.classList.add('active');
 
